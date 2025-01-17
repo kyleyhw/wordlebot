@@ -1,7 +1,6 @@
 import numpy as np
-import collections
 
-from funcs import merge, split
+from funcs import split, count_occurrences
 
 words = np.genfromtxt('data/wordle_allowed_guesses_unsorted.txt', dtype=str)
 
@@ -11,22 +10,26 @@ class game:
     def __init__(self, solution):
         self.solution = split(solution)
 
-    def turn(self, guess):
-        string = split('bbbbb')
-
+    def enter(self, guess):
+        colors = split('bbbbb')
         guess = split(guess)
-
+        green_letters = []
         for i, letter in enumerate(guess):
             if letter == self.solution[i]:
-                string[i] = 'g'
-            elif letter in self.solution:
-                if collections.Counter(self.solution)[letter] > collections.Counter(checked_letters)[letter]:
-                    string[i] = 'y'
+                colors[i] = 'g'
+                green_letters.append(letter)
+
+        for i, letter in enumerate(guess):
             checked_letters = guess[:i]
-            print(checked_letters)
-        return string
+            if letter in self.solution and \
+                    colors[i] != 'g' and \
+                    count_occurrences(letter, self.solution) >= \
+                    (count_occurrences(letter, green_letters) + count_occurrences(letter, checked_letters)):
+            # the = in the >= is because checked_letters includes the current letter, for more elegant initialization
+                colors[i] = 'y'
+        return colors
 
-test_game = game('aaaba')
-test_guess = test_game.turn('aazbz')
-
-print(test_guess)
+test_game = game('prose')
+print(test_game.enter('crane'))
+print(test_game.enter('soily'))
+print(test_game.enter('prose'))
