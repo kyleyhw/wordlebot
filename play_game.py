@@ -6,7 +6,7 @@ from rules import game
 
 words = np.genfromtxt('data/wordle_allowed_guesses_unsorted.txt', dtype=str)
 
-# fix seed
+# fix seed. seed 0 gives solution 'argle'
 np.random.seed(seed=0)
 
 index = np.random.randint(low=0, high=len(words), size=1, dtype=int)[0]
@@ -22,4 +22,4 @@ while guess != solution:
     guess = input('enter your next guess: ')
     print(game.enter(guess=guess))
 
-print('congratulations! it took ' + str(tries) + ' guesses')
+print('you won! it took ' + str(tries) + ' guesses.')
