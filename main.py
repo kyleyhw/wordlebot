@@ -163,7 +163,11 @@ if __name__ == "__main__":
     report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=args.random_seed)
 
     # Generate test report
-    test_report_filename = os.path.join(test_run_dir, "test_report.md")
+    subset_info = word_lists.get_subset_info()
+    report_base_name = f"report_d{search_depth}_m{optimization_metric}"
+    if subset_info["subset_mode"]:
+        report_base_name += f"_subset_s{subset_info['random_seed']}"
+    test_report_filename = os.path.join(test_run_dir, f"{report_base_name}.md")
     with open(test_report_filename, "w") as f:
         f.write(f"# Test Report: Wordle Solver Simulation\n\n")
         f.write(f"## 1. What was done\n")
