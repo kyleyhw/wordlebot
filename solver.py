@@ -7,6 +7,7 @@ import os
 from tqdm import tqdm
 
 from funcs import split
+import word_lists
 
 # --- Helper function to get feedback (copied and adapted from rules.py) ---
 def get_feedback(guess, solution):
@@ -32,9 +33,9 @@ def get_feedback(guess, solution):
 
 # --- Solver Class ---
 class solver:
-    def __init__(self, allowed_guesses_list, possible_solutions_list, search_depth=1, optimization_metric='min_avg_remaining'):
-        self.allowed_guesses = allowed_guesses_list
-        self.possible_solutions = possible_solutions_list
+    def __init__(self, search_depth=1, optimization_metric='min_avg_remaining'):
+        self.allowed_guesses = word_lists.get_allowed_guesses()
+        self.possible_solutions = word_lists.get_possible_solutions()
         self.search_depth = search_depth
         self.optimization_metric = optimization_metric
         self.feedback_map = {}

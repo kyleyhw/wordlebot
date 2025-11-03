@@ -1,15 +1,10 @@
 import numpy as np
 import random
 import sys
+import argparse
 
 from rules import game
-
-# Load word lists
-with open('data/wordle_allowed_guesses.txt', 'r') as f:
-    allowed_guesses = set(f.read().splitlines())
-
-with open('data/wordle_answers.txt', 'r') as f:
-    possible_solutions = f.read().splitlines()
+import word_lists
 
 MAX_TRIES = 6
 
@@ -33,12 +28,17 @@ def display_board(guess_history, tries_left):
     print("="*30)
 
 def play_wordle():
+    allowed_guesses = word_lists.get_allowed_guesses()
+    possible_solutions = word_lists.get_possible_solutions()
+
     solution = random.choice(possible_solutions)
     game_instance = game(solution=solution)
     guess_history = []
     tries = 0
 
     print("Welcome to Wordle!")
+    if word_lists.SUBSET_MODE:
+        print("--- Running in Subset Mode ---")
     print(f"The solution is: {solution}") # For debugging, remove later
 
     while tries < MAX_TRIES:
@@ -69,4 +69,11 @@ def play_wordle():
     print(f"Game Over! You ran out of tries. The word was '{solution}'.")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Play a game of Wordle.")
+    parser.add_argument("--subset", action="store_true", help="Use a subset of words for testing.")
+    args = parser.parse_args()
+
+    if args.subset:
+        word_lists.SUBSET_MODE = True
+
     play_wordle()

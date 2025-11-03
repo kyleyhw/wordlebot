@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox
 import random
+import argparse
 
 from rules import game
 from solver import solver
 from visualizations import plot_feedback_distribution
+import word_lists
 
 class WordleGUI:
     def __init__(self, master):
@@ -16,19 +18,10 @@ class WordleGUI:
         self.guess_history = []
         self.solution = ""
 
-        # Load word lists
-        with open('data/wordle_allowed_guesses.txt', 'r') as f:
-            self.allowed_guesses = set(f.read().splitlines())
-        with open('data/wordle_answers.txt', 'r') as f:
-            self.possible_solutions = f.read().splitlines()
+        self.allowed_guesses = word_lists.get_allowed_guesses()
+        self.possible_solutions = word_lists.get_possible_solutions()
 
-        # Load full lists for solver
-        with open('data/wordle_allowed_guesses.txt', 'r') as f:
-            allowed_guesses_list = f.read().splitlines()
-        with open('data/wordle_answers.txt', 'r') as f:
-            full_possible_solutions_list = f.read().splitlines()
-
-        self.solver_instance = solver(allowed_guesses_list, full_possible_solutions_list)
+        self.solver_instance = solver()
 
         self.create_widgets()
         self.start_new_game()
@@ -137,6 +130,13 @@ class WordleGUI:
         self.guess_button.config(state=tk.DISABLED)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run the Wordle GUI.")
+    parser.add_argument("--subset", action="store_true", help="Use a subset of words for testing.")
+    args = parser.parse_args()
+
+    if args.subset:
+        word_lists.SUBSET_MODE = True
+
     root = tk.Tk()
     app = WordleGUI(root)
     root.mainloop()
