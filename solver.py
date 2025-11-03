@@ -2,6 +2,7 @@ import collections
 import math
 import random
 import sys
+from tqdm import tqdm
 
 from funcs import split
 
@@ -43,7 +44,7 @@ class solver:
 
         print("Solver: Pre-calculating feedback map...")
         # Pre-calculate feedback for all guess-solution pairs
-        for guess in self.allowed_guesses:
+        for guess in tqdm(self.allowed_guesses, desc="Pre-calculating feedback map"):
             for solution in self.possible_solutions:
                 self.feedback_map[(guess, solution)] = get_feedback(guess, solution)
         print("Solver: Feedback map pre-calculation complete.")
@@ -191,7 +192,7 @@ class solver:
         # This is the most computationally intensive part
         candidate_guesses = self.allowed_guesses # Or a subset for optimization
 
-        for guess in candidate_guesses:
+        for guess in tqdm(candidate_guesses, desc="Finding best guess"):
             score = self._evaluate_guess(guess, current_possible_solutions_frozenset, search_depth, optimization_metric)
             if score < best_score:
                 best_score = score
