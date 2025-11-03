@@ -45,6 +45,7 @@ This project is a Wordle bot that can play Wordle and solve it.
 - [`play_game.md`](./docs/play_game.md)
 - [`rules.md`](./docs/rules.md)
 - [`solver.md`](./docs/solver.md)
+- [`word_lists.md`](./docs/word_lists.md)
 
 ## Overview
 
