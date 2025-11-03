@@ -33,3 +33,29 @@ def plot_feedback_distribution(canvas, guess, feedback_map, possible_solutions):
     chart = FigureCanvasTkAgg(fig, master=canvas)
     chart.draw()
     chart.get_tk_widget().pack()
+
+def plot_guess_distribution(results, max_tries, search_depth, optimization_metric, subset_mode, average_tries, output_filename="guess_distribution.png"):
+    distribution = collections.defaultdict(int)
+    for t in results:
+        if t <= max_tries:
+            distribution[t] += 1
+        else:
+            distribution[f">{max_tries}"] += 1
+
+    labels = [str(i) for i in range(1, max_tries + 1)]
+    if f">{max_tries}" in distribution:
+        labels.append(f">{max_tries}")
+    
+    counts = [distribution[int(label)] if label.isdigit() else distribution[label] for label in labels]
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(labels, counts, color='skyblue')
+    plt.xlabel("Number of Guesses")
+    plt.ylabel("Number of Solutions")
+    title = f"Wordle Solver Guess Distribution\n"
+    title += f"(Depth={search_depth}, Metric={optimization_metric}, Subset={subset_mode}, Avg. Guesses={average_tries:.2f})"
+    plt.title(title)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.savefig(output_filename)
+    plt.close()
+    print(f"Guess distribution plot saved to {output_filename}")

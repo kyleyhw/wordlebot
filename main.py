@@ -1,6 +1,5 @@
 import random
 import collections
-import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm # Import tqdm
 import time # Import time for runtime measurement
@@ -10,36 +9,11 @@ import argparse
 from rules import game
 from solver import solver, get_feedback
 import word_lists
+from visualizations import plot_guess_distribution
 
 MAX_TRIES = 6
 CHECKPOINT_INTERVAL = 10 # Save checkpoint every N solutions
 CHECKPOINTS_DIR = "checkpoints"
-
-def plot_guess_distribution(results, max_tries, search_depth, optimization_metric, subset_mode, output_filename="guess_distribution.png"):
-    distribution = collections.defaultdict(int)
-    for t in results:
-        if t <= max_tries:
-            distribution[t] += 1
-        else:
-            distribution[f">{max_tries}"] += 1
-
-    labels = [str(i) for i in range(1, max_tries + 1)]
-    if f">{max_tries}" in distribution:
-        labels.append(f">{max_tries}")
-    
-    counts = [distribution[int(label)] if label.isdigit() else distribution[label] for label in labels]
-
-    plt.figure(figsize=(10, 6))
-    plt.bar(labels, counts, color='skyblue')
-    plt.xlabel("Number of Guesses")
-    plt.ylabel("Number of Solutions")
-    title = f"Wordle Solver Guess Distribution\n"
-    title += f"(Depth={search_depth}, Metric={optimization_metric}, Subset={subset_mode})"
-    plt.title(title)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.savefig(output_filename)
-    plt.close()
-    print(f"Guess distribution plot saved to {output_filename}")
 
 def save_checkpoint(checkpoint_data, filename):
     os.makedirs(CHECKPOINTS_DIR, exist_ok=True)
@@ -57,7 +31,7 @@ def load_checkpoint(filename):
         return checkpoint_data
     return None
 
-def run_simulation(search_depth=1, optimization_metric='min_avg_remaining'):
+def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_remaining'):
     start_time = time.time() # Start timer
 
     possible_solutions_subset = word_lists.get_possible_solutions()
@@ -152,8 +126,11 @@ Total solutions simulated: {total_games}
     print(report_content)
 
     # --- Visualization ---
-    plot_filename = os.path.join("test_reports", "guess_distribution.png")
-    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, word_lists.SUBSET_MODE, plot_filename)
+    plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
+    if word_lists.SUBSET_MODE:
+        plot_filename_base += "_subset"
+    plot_filename = f"{plot_filename_base}.png"
+    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, word_lists.SUBSET_MODE, average_tries, os.path.join(report_dir, plot_filename))
 
     return report_content, runtime, plot_filename
 
@@ -165,10 +142,18 @@ if __name__ == "__main__":
     if args.subset:
         word_lists.SUBSET_MODE = True
 
-    report, runtime, plot_filename = run_simulation(search_depth=1, optimization_metric='min_avg_remaining')
+    # Generate a unique directory name for this test run
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    test_run_name = f"d1_mmin_avg_remaining"
+    if args.subset:
+        test_run_name += "_subset"
+    test_run_dir = os.path.join("test_reports", f"{test_run_name}_{timestamp}")
+    os.makedirs(test_run_dir, exist_ok=True)
+
+    report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=1, optimization_metric='min_avg_remaining')
 
     # Generate test report
-    test_report_filename = os.path.join("test_reports", "test_report.md")
+    test_report_filename = os.path.join(test_run_dir, "test_report.md")
     with open(test_report_filename, "w") as f:
         f.write(f"# Test Report: Wordle Solver Simulation\n\n")
         f.write(f"## 1. What was done\n")
@@ -187,9 +172,9 @@ if __name__ == "__main__":
         else:
             f.write(f"*   **Dataset**: Full list of allowed guesses and possible solutions.\n\n")
         f.write(f"## 4. Results\n")
-        f.write(f"```\n{report}```\n\n")
+        f.write(f"```\n{report_content}```\n\n")
         f.write(f"## 5. Guess Distribution Plot\n\n")
-        f.write(f"![Guess Distribution]({os.path.basename(plot_filename)})\n\n")
+        f.write(f"![Guess Distribution]({plot_filename})\n\n")
         f.write(f"## 6. Runtime\n")
         f.write(f"The simulation completed in {runtime:.2f} seconds.\n")
     print(f"Test report saved to {test_report_filename}")
