@@ -15,7 +15,7 @@ MAX_TRIES = 6
 CHECKPOINT_INTERVAL = 10 # Save checkpoint every N solutions
 CHECKPOINTS_DIR = "checkpoints"
 
-def plot_guess_distribution(results, max_tries, output_filename="guess_distribution.png"):
+def plot_guess_distribution(results, max_tries, search_depth, optimization_metric, subset_mode, output_filename="guess_distribution.png"):
     distribution = collections.defaultdict(int)
     for t in results:
         if t <= max_tries:
@@ -33,7 +33,9 @@ def plot_guess_distribution(results, max_tries, output_filename="guess_distribut
     plt.bar(labels, counts, color='skyblue')
     plt.xlabel("Number of Guesses")
     plt.ylabel("Number of Solutions")
-    plt.title("Wordle Solver Guess Distribution")
+    title = f"Wordle Solver Guess Distribution\n"
+    title += f"(Depth={search_depth}, Metric={optimization_metric}, Subset={subset_mode})"
+    plt.title(title)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.savefig(output_filename)
     plt.close()
@@ -150,10 +152,10 @@ Total solutions simulated: {total_games}
     print(report_content)
 
     # --- Visualization ---
-    # Save plot to test_reports directory
-    plot_guess_distribution(results, MAX_TRIES, os.path.join("test_reports", "guess_distribution.png"))
+    plot_filename = os.path.join("test_reports", "guess_distribution.png")
+    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, word_lists.SUBSET_MODE, plot_filename)
 
-    return report_content, runtime
+    return report_content, runtime, plot_filename
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a Wordle solver simulation.")
@@ -163,7 +165,7 @@ if __name__ == "__main__":
     if args.subset:
         word_lists.SUBSET_MODE = True
 
-    report, runtime = run_simulation(search_depth=1, optimization_metric='min_avg_remaining')
+    report, runtime, plot_filename = run_simulation(search_depth=1, optimization_metric='min_avg_remaining')
 
     # Generate test report
     test_report_filename = os.path.join("test_reports", "test_report.md")
@@ -186,6 +188,8 @@ if __name__ == "__main__":
             f.write(f"*   **Dataset**: Full list of allowed guesses and possible solutions.\n\n")
         f.write(f"## 4. Results\n")
         f.write(f"```\n{report}```\n\n")
-        f.write(f"## 5. Runtime\n")
+        f.write(f"## 5. Guess Distribution Plot\n\n")
+        f.write(f"![Guess Distribution]({os.path.basename(plot_filename)})\n\n")
+        f.write(f"## 6. Runtime\n")
         f.write(f"The simulation completed in {runtime:.2f} seconds.\n")
     print(f"Test report saved to {test_report_filename}")
