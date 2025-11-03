@@ -3,13 +3,14 @@ from tkinter import messagebox
 import random
 
 from rules import game
+from solver import solver
+from visualizations import plot_feedback_distribution
 
 class WordleGUI:
     def __init__(self, master):
         self.master = master
         master.title("Wordle")
-        master.geometry("400x600")
-        master.resizable(False, False)
+        master.geometry("800x600")
 
         self.current_guess_num = 0
         self.guess_history = []
@@ -20,6 +21,14 @@ class WordleGUI:
             self.allowed_guesses = set(f.read().splitlines())
         with open('data/wordle_answers.txt', 'r') as f:
             self.possible_solutions = f.read().splitlines()
+
+        # Load full lists for solver
+        with open('data/wordle_allowed_guesses.txt', 'r') as f:
+            allowed_guesses_list = f.read().splitlines()
+        with open('data/wordle_answers.txt', 'r') as f:
+            full_possible_solutions_list = f.read().splitlines()
+
+        self.solver_instance = solver(allowed_guesses_list, full_possible_solutions_list)
 
         self.create_widgets()
         self.start_new_game()
@@ -55,6 +64,10 @@ class WordleGUI:
         self.new_game_button = tk.Button(self.master, text="New Game", command=self.start_new_game)
         self.new_game_button.pack(pady=5)
 
+        # Create a canvas for the plot
+        self.plot_canvas = tk.Canvas(self.master, width=400, height=400, bg='grey')
+        self.plot_canvas.pack(side=tk.RIGHT, padx=10)
+
     def start_new_game(self):
         self.solution = random.choice(self.possible_solutions)
         self.game_instance = game(solution=self.solution)
@@ -65,6 +78,10 @@ class WordleGUI:
         for r in range(6):
             for c in range(5):
                 self.letter_labels[r][c].config(text="", bg="SystemButtonFace")
+
+        # Clear the plot
+        for widget in self.plot_canvas.winfo_children():
+            widget.destroy()
         
         self.input_entry.delete(0, tk.END)
         self.input_entry.config(state=tk.NORMAL)
@@ -89,6 +106,9 @@ class WordleGUI:
         self.guess_history.append((guess_word, feedback))
 
         self.update_board()
+
+        # Update the plot
+        plot_feedback_distribution(self.plot_canvas, guess_word, self.solver_instance.feedback_map, self.possible_solutions)
 
         if "".join(feedback) == "ggggg":
             messagebox.showinfo("Wordle", f"You won in {self.current_guess_num + 1} guesses!")

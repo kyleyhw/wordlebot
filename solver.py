@@ -2,6 +2,8 @@ import collections
 import math
 import random
 import sys
+import json
+import os
 from tqdm import tqdm
 
 from funcs import split
@@ -42,12 +44,25 @@ class solver:
         if self.optimization_metric not in ['min_max_remaining', 'min_avg_remaining', 'min_avg_guesses']:
             raise ValueError("optimization_metric must be 'min_max_remaining', 'min_avg_remaining', or 'min_avg_guesses'")
 
-        print("Solver: Pre-calculating feedback map...")
-        # Pre-calculate feedback for all guess-solution pairs
-        for guess in tqdm(self.allowed_guesses, desc="Pre-calculating feedback map"):
-            for solution in self.possible_solutions:
-                self.feedback_map[(guess, solution)] = get_feedback(guess, solution)
-        print("Solver: Feedback map pre-calculation complete.")
+        feedback_map_cache_file = "feedback_map.json"
+        if os.path.exists(feedback_map_cache_file):
+            print("Solver: Loading feedback map from cache...")
+            with open(feedback_map_cache_file, 'r') as f:
+                feedback_map_str_keys = json.load(f)
+            self.feedback_map = {tuple(eval(k)): v for k, v in feedback_map_str_keys.items()}
+            print("Solver: Feedback map loaded from cache.")
+        else:
+            print("Solver: Pre-calculating feedback map...")
+            # Pre-calculate feedback for all guess-solution pairs
+            for guess in tqdm(self.allowed_guesses, desc="Pre-calculating feedback map"):
+                for solution in self.possible_solutions:
+                    self.feedback_map[(guess, solution)] = get_feedback(guess, solution)
+            print("Solver: Feedback map pre-calculation complete.")
+            print("Solver: Saving feedback map to cache...")
+            feedback_map_str_keys = {str(k): v for k, v in self.feedback_map.items()}
+            with open(feedback_map_cache_file, 'w') as f:
+                json.dump(feedback_map_str_keys, f)
+            print("Solver: Feedback map saved to cache.")
 
         print(f"Solver: Calculating best initial guess for depth {self.search_depth} and metric {self.optimization_metric}...")
         self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)] = \
@@ -149,7 +164,7 @@ class solver:
 
         if optimization_metric == 'min_max_remaining':
             max_remaining = 0
-            for pattern, group in pattern_groups.items():
+            for pattern, group in tqdm(pattern_groups.items(), desc="Evaluating guess"):
                 group_frozenset = frozenset(group)
                 # Recursively evaluate the best next guess for this group
                 next_best_guess = self._find_best_guess_multi_layer(group_frozenset, depth - 1, optimization_metric)
@@ -160,7 +175,7 @@ class solver:
 
         elif optimization_metric == 'min_avg_remaining':
             total_remaining = 0
-            for pattern, group in pattern_groups.items():
+            for pattern, group in tqdm(pattern_groups.items(), desc="Evaluating guess"):
                 group_frozenset = frozenset(group)
                 # Recursively evaluate the best next guess for this group
                 next_best_guess = self._find_best_guess_multi_layer(group_frozenset, depth - 1, optimization_metric)
@@ -192,7 +207,7 @@ class solver:
         # This is the most computationally intensive part
         candidate_guesses = self.allowed_guesses # Or a subset for optimization
 
-        for guess in tqdm(candidate_guesses, desc="Finding best guess"):
+        for guess in candidate_guesses:
             score = self._evaluate_guess(guess, current_possible_solutions_frozenset, search_depth, optimization_metric)
             if score < best_score:
                 best_score = score
