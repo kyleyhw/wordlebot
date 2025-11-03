@@ -5,6 +5,7 @@ from tqdm import tqdm # Import tqdm
 import time # Import time for runtime measurement
 import json # Import json for checkpointing
 import argparse
+import sys # Import sys for maxsize
 
 from rules import game
 from solver import solver, get_feedback
@@ -14,6 +15,7 @@ from visualizations import plot_guess_distribution
 MAX_TRIES = 6
 CHECKPOINT_INTERVAL = 10 # Save checkpoint every N solutions
 CHECKPOINTS_DIR = "checkpoints"
+SUBSET_SIZE = 100 # Define SUBSET_SIZE as a constant
 
 def save_checkpoint(checkpoint_data, filename):
     os.makedirs(CHECKPOINTS_DIR, exist_ok=True)
@@ -31,14 +33,17 @@ def load_checkpoint(filename):
         return checkpoint_data
     return None
 
-def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_remaining'):
+def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=None):
     start_time = time.time() # Start timer
 
     possible_solutions_subset = word_lists.get_possible_solutions()
     allowed_guesses_subset = word_lists.get_allowed_guesses()
 
     # Generate unique checkpoint filename
-    checkpoint_filename = f"checkpoint_d{search_depth}_m{optimization_metric}.json"
+    checkpoint_filename = f"checkpoint_d{search_depth}_m{optimization_metric}"
+    if random_seed is not None:
+        checkpoint_filename += f"_s{random_seed}"
+    checkpoint_filename += ".json"
     
     # Try to load checkpoint
     checkpoint_data = load_checkpoint(checkpoint_filename)
@@ -106,8 +111,9 @@ def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_rema
 --- Solver Performance Report ---
 Total solutions simulated: {total_games}
 """
-    if word_lists.SUBSET_MODE:
-        report_content += f"Used a subset of {len(allowed_guesses_subset)} words for both solutions and guesses.\n"
+    subset_info = word_lists.get_subset_info()
+    if subset_info["subset_mode"]:
+        report_content += f"Used a subset of {subset_info['subset_size']} words for both solutions and guesses (Random Seed: {subset_info['random_seed']}).\n"
     report_content += f"Average guesses per game: {average_tries:.2f}\n\nGuess Distribution:\n"""
     for t in sorted(tries_distribution.keys()):
         if t <= MAX_TRIES:
@@ -127,38 +133,44 @@ Total solutions simulated: {total_games}
 
     # --- Visualization ---
     plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
-    if word_lists.SUBSET_MODE:
-        plot_filename_base += "_subset"
+    if subset_info["subset_mode"]:
+        plot_filename_base += f"_subset_s{subset_info['random_seed']}"
     plot_filename = f"{plot_filename_base}.png"
-    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, word_lists.SUBSET_MODE, average_tries, os.path.join(report_dir, plot_filename))
+    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, subset_info["subset_mode"], average_tries, os.path.join(report_dir, plot_filename), random_seed=subset_info["random_seed"])
 
     return report_content, runtime, plot_filename
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a Wordle solver simulation.")
     parser.add_argument("--subset", action="store_true", help="Use a subset of words for testing.")
+    parser.add_argument("--random_seed", type=int, default=None, help="Random seed for subset generation. If not provided, a random seed will be generated.")
     args = parser.parse_args()
 
-    if args.subset:
-        word_lists.SUBSET_MODE = True
+    # If subset mode is enabled and no random seed is provided, generate one.
+    if args.subset and args.random_seed is None:
+        args.random_seed = random.randint(0, sys.maxsize) # Generate a large random integer
+        print(f"Generated random seed for subset: {args.random_seed}")
+
+    word_lists.set_subset_params(args.subset, SUBSET_SIZE, args.random_seed)
 
     # Generate a unique directory name for this test run
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     test_run_name = f"d1_mmin_avg_remaining"
     if args.subset:
-        test_run_name += "_subset"
+        test_run_name += f"_subset_s{args.random_seed}"
     test_run_dir = os.path.join("test_reports", f"{test_run_name}_{timestamp}")
     os.makedirs(test_run_dir, exist_ok=True)
 
-    report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=1, optimization_metric='min_avg_remaining')
+    report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=args.random_seed)
 
     # Generate test report
     test_report_filename = os.path.join(test_run_dir, "test_report.md")
     with open(test_report_filename, "w") as f:
         f.write(f"# Test Report: Wordle Solver Simulation\n\n")
         f.write(f"## 1. What was done\n")
-        if args.subset:
-            f.write(f"A simulation was run using the Wordle solver against a subset of {word_lists.SUBSET_SIZE} words from the `wordle_answers.txt` list. The set of allowed guesses was also limited to this same subset.\n\n")
+        subset_info = word_lists.get_subset_info()
+        if subset_info["subset_mode"]:
+            f.write(f"A simulation was run using the Wordle solver against a subset of {subset_info['subset_size']} words from the `wordle_answers.txt` list (Random Seed: {subset_info['random_seed']}). The set of allowed guesses was also limited to this same subset.\n\n")
         else:
             f.write(f"A simulation was run using the Wordle solver against the full list of possible solutions from the `wordle_answers.txt` list.\n\n")
         f.write(f"## 2. Why it was done\n")
@@ -167,8 +179,8 @@ if __name__ == "__main__":
         f.write(f"The solver's performance was tested with the following configuration:\n")
         f.write(f"*   **Search Depth**: 1 (greedy approach)\n")
         f.write(f"*   **Optimization Metric**: `min_avg_remaining` (minimizing average remaining solutions)\n")
-        if args.subset:
-            f.write(f"*   **Dataset**: Subset of {word_lists.SUBSET_SIZE} words from `wordle_answers.txt` for both solutions and allowed guesses.\n\n")
+        if subset_info["subset_mode"]:
+            f.write(f"*   **Dataset**: Subset of {subset_info['subset_size']} words from `wordle_answers.txt` for both solutions and allowed guesses (Random Seed: {subset_info['random_seed']}).\n\n")
         else:
             f.write(f"*   **Dataset**: Full list of allowed guesses and possible solutions.\n\n")
         f.write(f"## 4. Results\n")
