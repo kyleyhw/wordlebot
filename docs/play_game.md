@@ -25,6 +25,12 @@ To play the Wordle game via the CLI, navigate to the project's root directory in
 python3 play_game.py
 ```
 
+To play the game with a subset of words for faster testing, use the `--subset` flag:
+
+```bash
+python3 play_game.py --subset
+```
+
 The game will then prompt you to enter your 5-letter guesses. Follow the on-screen instructions and feedback to deduce the secret word.
 
 ## 4. Functions
@@ -44,7 +50,8 @@ The game will then prompt you to enter your 5-letter guesses. Follow the on-scre
 
 *   **Purpose**: Contains the main game loop and orchestrates the interactive gameplay.
 *   **Implementation Details**:
-    *   Selects a random `solution` from `possible_solutions.txt`.
+    *   Uses the `word_lists` module to get the word lists.
+    *   Selects a random `solution` from the list of possible solutions.
     *   Initializes a `game` instance from `rules.py`.
     *   Manages `guess_history` and `tries` count.
     *   Enters a loop that continues until the word is guessed or `MAX_TRIES` (6) are exhausted.
@@ -58,11 +65,11 @@ The game will then prompt you to enter your 5-letter guesses. Follow the on-scre
 
 ## 5. Dependencies
 
+*   `argparse`: For parsing command-line arguments.
 *   `random`: Used for selecting a random solution word.
 *   `sys`: Potentially used for system-level operations (though not explicitly used in the current version, it's a common utility for CLI apps).
 *   `rules.py`: Provides the core `game` class and its `enter` method for processing guesses and generating feedback.
-*   `wordle_allowed_guesses.txt`: A text file containing a list of all valid 5-letter words that can be entered as guesses.
-*   `wordle_answers.txt`: A text file containing a list of all possible 5-letter words that can be chosen as the secret solution.
+*   `word_lists.py`: Provides the word lists for the game.
 
 ## References
 

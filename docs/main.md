@@ -20,6 +20,12 @@ To run the simulations and generate the performance report, navigate to the proj
 python3 main.py
 ```
 
+To run the simulation with a subset of words for faster testing, use the `--subset` flag:
+
+```bash
+python3 main.py --subset
+```
+
 Be aware that the solver performs extensive pre-calculations (generating a feedback map for all guess-solution pairs and determining the best initial guess) and then runs simulations for over 2,000 possible solutions. This process can be computationally intensive and may take a significant amount of time to complete, depending on your system's specifications. Progress updates will be printed to the console during the simulation, thanks to the `tqdm` library [[1]](#ref-tqdm).
 
 ## 4. Functions
@@ -28,9 +34,9 @@ Be aware that the solver performs extensive pre-calculations (generating a feedb
 
 *   **Purpose**: Orchestrates the entire simulation process, from solver initialization to report generation.
 *   **Implementation Details**:
-    *   Loads `wordle_allowed_guesses.txt` and `wordle_answers.txt`.
+    *   Uses the `word_lists` module to get the word lists.
     *   Initializes an instance of the `solver.solver` class, which triggers its pre-calculation steps.
-    *   Iterates through each `solution` in `possible_solutions_list`:
+    *   Iterates through each `solution` in the list of possible solutions:
         *   Creates a new `rules.game` instance for each solution.
         *   Manages `guess_history` and `tries` for the current game.
         *   Repeatedly calls `wordle_solver.get_next_guess()` to get the optimal guess.
@@ -41,12 +47,12 @@ Be aware that the solver performs extensive pre-calculations (generating a feedb
 
 ## 5. Dependencies
 
+*   `argparse`: For parsing command-line arguments.
 *   `random`: Used indirectly by `rules.game` for solution selection in individual game instances (though `main.py` iterates through all solutions).
 *   `collections`: Specifically `collections.defaultdict` for aggregating guess distribution statistics.
 *   `rules.py`: Provides the `game` class for simulating individual Wordle games.
 *   `solver.py`: Provides the `solver` class, which determines the optimal guesses based on information theory.
-*   `wordle_allowed_guesses.txt`: Contains the list of words that the solver can use as guesses.
-*   `wordle_answers.txt`: Contains the comprehensive list of all possible Wordle solutions, against which the solver is tested.
+*   `word_lists.py`: Provides the word lists for the simulation.
 
 ## References
 

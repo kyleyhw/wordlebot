@@ -24,6 +24,12 @@ To play the Wordle game via the GUI, navigate to the project's root directory in
 python3 gui_game.py
 ```
 
+To play the game with a subset of words for faster testing, use the `--subset` flag:
+
+```bash
+python3 gui_game.py --subset
+```
+
 A new window will open, presenting the Wordle game board. Type your 5-letter guess into the input field at the bottom and click the "Guess" button or press Enter. The board will update with color-coded feedback, and a plot will be generated to show the feedback distribution.
 
 ## 4. Class: `WordleGUI`
@@ -35,7 +41,7 @@ A new window will open, presenting the Wordle game board. Type your 5-letter gue
     *   `master` (tk.Tk): The root Tkinter window.
 *   **Implementation Details**:
     *   Configures the main window's title, size, and resizability.
-    *   Loads `wordle_allowed_guesses.txt` and `wordle_answers.txt` into `self.allowed_guesses` and `self.possible_solutions` respectively.
+    *   Uses the `word_lists` module to get the word lists.
     *   Initializes the `solver` to get access to the `feedback_map`.
     *   Calls `create_widgets()` to build the GUI elements.
     *   Calls `start_new_game()` to set up the first game.
@@ -99,14 +105,14 @@ A new window will open, presenting the Wordle game board. Type your 5-letter gue
 
 ## 5. Dependencies
 
+*   `argparse`: For parsing command-line arguments.
 *   `tkinter`: The standard Python GUI toolkit.
 *   `tkinter.messagebox`: Used for displaying pop-up messages (warnings, win/loss notifications).
 *   `random`: Used for selecting a random solution word.
 *   `rules.py`: Provides the core `game` class and its `enter` method for processing guesses and generating feedback.
 *   `solver.py`: Provides the `solver` class to get access to the `feedback_map`.
 *   `visualizations.py`: Provides the `plot_feedback_distribution` function.
-*   `wordle_allowed_guesses.txt`: A text file containing a list of all valid 5-letter words that can be entered as guesses.
-*   `wordle_answers.txt`: A text file containing a list of all possible 5-letter words that can be chosen as the secret solution.
+*   `word_lists.py`: Provides the word lists for the game.
 
 ## References
 

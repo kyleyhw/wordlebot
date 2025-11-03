@@ -77,7 +77,7 @@ def run_simulation(search_depth=1, optimization_metric='min_avg_remaining'):
         failed_solutions = []
         start_index = 0
 
-    wordle_solver = solver(allowed_guesses_subset, possible_solutions_subset, search_depth, optimization_metric)
+    wordle_solver = solver(search_depth, optimization_metric)
 
     print("\nStarting simulations...")
     # Wrap the loop with tqdm for a progress bar

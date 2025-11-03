@@ -73,16 +73,15 @@ To optimize performance, especially for the initial guess and subsequent turns, 
 
 ## 4. Class: `solver`
 
-### `__init__(self, allowed_guesses_list, possible_solutions_list, search_depth=1, optimization_metric='min_avg_remaining')`
+### `__init__(self, search_depth=1, optimization_metric='min_avg_remaining')`
 
-*   **Purpose**: Initializes the Wordle solver with the complete lists of allowed guesses and possible solutions, and performs all necessary pre-calculations.
+*   **Purpose**: Initializes the Wordle solver, gets the word lists from the `word_lists` module, and performs all necessary pre-calculations.
 *   **Parameters**:
-    *   `allowed_guesses_list` (list of str): All words that can be entered as guesses.
-    *   `possible_solutions_list` (list of str): All words that can be the secret solution.
     *   `search_depth` (int, optional): The number of layers to look ahead in the search tree. Defaults to 1 (greedy).
     *   `optimization_metric` (str, optional): The metric to optimize for. Can be `'min_max_remaining'`, `'min_avg_remaining'`, or `'min_avg_guesses'`. Defaults to `'min_avg_remaining'`.
 *   **Implementation Details**:
-    *   Stores the input word lists, `search_depth`, and `optimization_metric`.
+    *   Uses the `word_lists` module to get the word lists.
+    *   Stores the `search_depth`, and `optimization_metric`.
     *   Validates the `optimization_metric`.
     *   Executes the pre-calculation of `feedback_map` (or loads it from cache).
     *   Determines and stores the optimal initial guess for the given `search_depth` and `optimization_metric` in `best_initial_guesses_by_config`.
@@ -175,6 +174,7 @@ To optimize performance, especially for the initial guess and subsequent turns, 
 *   `random`: Used for fallback guesses if no optimal guess can be determined.
 *   `funcs.py`: Provides the `split` utility function.
 *   `rules.py`: The `get_feedback` function is a static adaptation of the logic found in `rules.py`.
+*   `word_lists.py`: Provides the word lists for the solver.
 
 ## References
 

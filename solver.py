@@ -242,7 +242,7 @@ class solver:
         for prev_guess, prev_feedback in guess_history:
             current_possible_solutions_list = [ 
                 solution for solution in current_possible_solutions_list 
-                if self.feedback_map[(prev_guess, solution)] == prev_feedback
+                if (self.feedback_map[(prev_guess, solution)] == prev_feedback).all()
             ]
         
         current_possible_solutions_frozenset = frozenset(current_possible_solutions_list)
