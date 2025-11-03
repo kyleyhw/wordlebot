@@ -15,12 +15,21 @@ class game:
                 colors[i] = 'g'
                 green_letters.append(letter)
 
+        # Create a mutable list from the solution to mark letters as used
+        solution_copy = list(self.solution)
+
+        # First pass: Check for green letters
         for i, letter in enumerate(guess):
-            checked_letters = guess[:i]
-            if letter in self.solution and \
-                    colors[i] != 'g' and \
-                    count_occurrences(letter, self.solution) >= \
-                    (count_occurrences(letter, green_letters) + count_occurrences(letter, checked_letters)):
-            # the = in the >= is because checked_letters includes the current letter, for more elegant initialization
-                colors[i] = 'y'
+            if letter == solution_copy[i]:
+                colors[i] = 'g'
+                solution_copy[i] = None  # Mark as used
+
+        # Second pass: Check for yellow and black letters
+        for i, letter in enumerate(guess):
+            if colors[i] != 'g':  # Only check if not already marked green
+                if letter in solution_copy:
+                    colors[i] = 'y'
+                    solution_copy[solution_copy.index(letter)] = None  # Mark as used
+                else:
+                    colors[i] = 'b'
         return colors
