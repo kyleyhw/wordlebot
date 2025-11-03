@@ -6,7 +6,7 @@ The `rules.py` module defines the core logic of the Wordle game. It encapsulates
 
 ## 2. Wordle Game Rules and Feedback Logic
 
-The Wordle game involves guessing a 5-letter secret word within 6 attempts. After each guess, the player receives feedback on how close their guess was to the solution. This feedback is provided for each letter in the guess, using a color-coded system:
+The Wordle game involves guessing a 5-letter secret word within 6 attempts [[1]](#ref-wardle-2022). After each guess, the player receives feedback on how close their guess was to the solution. This feedback is provided for each letter in the guess, using a color-coded system:
 
 *   **Green (G)**: The letter is in the secret word and in the correct position.
 *   **Yellow (Y)**: The letter is in the secret word but in the wrong position.
@@ -91,3 +91,8 @@ This two-pass mechanism guarantees that each letter in the guess is evaluated ag
 ## 4. Dependencies
 
 *   `funcs.py`: Utilizes the `split` function to convert strings into character arrays. (Note: The `count_occurrences` function is no longer directly used in the refined `enter` method, but `split` is still essential.)
+
+## References
+
+<a id="ref-wardle-2022"></a>
+[1] Wardle, J. (2022). *Wordle*. Retrieved from https://www.nytimes.com/games/wordle/index.html

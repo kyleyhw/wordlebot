@@ -6,13 +6,13 @@ The `solver.py` module implements an optimal Wordle solver based on an informati
 
 ## 2. Mathematical Principles: Information Theory and Optimization Metrics
 
-The core idea behind this solver is to leverage information theory, specifically the concept of **entropy**, to quantify the "informativeness" of a guess. In the context of Wordle, a guess is more informative if it effectively narrows down the set of possible solution words.
+The core idea behind this solver is to leverage information theory, specifically the concept of **entropy** [[1]](#ref-shannon-1948), to quantify the "informativeness" of a guess. In the context of Wordle, a guess is more informative if it effectively narrows down the set of possible solution words.
 
 ### Entropy Calculation (for `search_depth=1` and `min_avg_remaining` optimization)
 
 For a given guess `w` and a set of `N` currently possible solution words, the entropy $H(w)$ is calculated as follows:
 
-$H(w) = -Γ_{p \in \text{Patterns}} P(p|w) \log_2 P(p|w)$
+$H(w) = -\sum_{p \in \text{Patterns}} P(p|w) \log_2 P(p|w)$
 
 Where:
 *   $P(p|w)$ is the probability of observing a specific feedback pattern $p$ (e.g., 'gybby') if we make guess $w$.
@@ -35,7 +35,7 @@ For multi-layer searches (`search_depth > 1`), the solver can optimize for diffe
 
 *   **`min_avg_guesses` (Minimize Average Future Guesses):**
     *   **Goal**: To choose a guess that minimizes the expected number of *additional* guesses required to solve the puzzle from the current state, considering future steps up to `search_depth`.
-    *   **Algorithm (Minimax Expected Guesses)**:
+    *   **Algorithm (Minimax Expected Guesses)** [[2]](#ref-knuth-1975):
         This metric is significantly more complex and computationally intensive than the others, as it involves estimating the full game tree from each state. The algorithm is recursive and relies heavily on **memoization** to be computationally feasible.
 
         1.  **Base Case**: If there is only one possible solution left, it takes 1 guess (the current one). If there are no solutions, it's an error state (or effectively infinite guesses).
@@ -63,7 +63,7 @@ To optimize performance, especially for the initial guess and subsequent turns, 
 
 ### Feedback Map (`feedback_map`)
 
-*   **Rationale**: Calculating the feedback pattern for every `(guess, solution)` pair during runtime is computationally expensive. By pre-calculating and storing these patterns, we can retrieve them in constant time during the actual solving process.
+*   **Rationale**: Calculating the feedback pattern for every `(guess, solution)` pair during runtime is computationally expensive. By pre-calculating and storing these patterns, we can retrieve them in constant time during the actual solving process. The decision to pre-calculate the feedback map is a classic space-time tradeoff. We use more memory to store the map, but we save a significant amount of time during the solving process. The map is also cached to a file (`feedback_map.json`) so that it only needs to be calculated once.
 *   **Implementation**: A dictionary `feedback_map` is created, where keys are `(guess_word, solution_word)` tuples and values are the 5-character feedback strings (e.g., 'gybby'). This map is populated by iterating through all `allowed_guesses` and all `possible_solutions` and calling the `get_feedback` function for each pair.
 
 ### Best Initial Guesses by Configuration (`best_initial_guesses_by_config`)
@@ -84,7 +84,7 @@ To optimize performance, especially for the initial guess and subsequent turns, 
 *   **Implementation Details**:
     *   Stores the input word lists, `search_depth`, and `optimization_metric`.
     *   Validates the `optimization_metric`.
-    *   Executes the pre-calculation of `feedback_map`.
+    *   Executes the pre-calculation of `feedback_map` (or loads it from cache).
     *   Determines and stores the optimal initial guess for the given `search_depth` and `optimization_metric` in `best_initial_guesses_by_config`.
 
 ### `_calculate_entropy(self, guess, current_possible_solutions)`
@@ -107,7 +107,7 @@ To optimize performance, especially for the initial guess and subsequent turns, 
     *   `depth` (int): The remaining depth of the lookahead search.
 *   **Returns**: (float) The minimum expected number of additional guesses.
 *   **Implementation Details**: 
-    *   **Memoization**: Utilizes `self._expected_guesses_memo` to store and retrieve previously computed results for identical sets of possible solutions, preventing redundant calculations.
+    *   **Memoization**: Utilizes `self._expected_guesses_memo` to store and retrieve previously computed results for identical sets of possible solutions, preventing redundant calculations. The keys to this memoization dictionary are `frozenset` objects because they are hashable, unlike lists.
     *   **Base Cases**: 
         *   If `current_possible_solutions_frozenset` is empty, returns 0 (should not occur in a solvable game).
         *   If `current_possible_solutions_frozenset` contains only one word, returns 1 (one more guess to get the word).
@@ -175,3 +175,11 @@ To optimize performance, especially for the initial guess and subsequent turns, 
 *   `random`: Used for fallback guesses if no optimal guess can be determined.
 *   `funcs.py`: Provides the `split` utility function.
 *   `rules.py`: The `get_feedback` function is a static adaptation of the logic found in `rules.py`.
+
+## References
+
+<a id="ref-shannon-1948"></a>
+[1] Shannon, C. E. (1948). A mathematical theory of communication. *Bell System Technical Journal*, *27*(3), 379-423.
+
+<a id="ref-knuth-1975"></a>
+[2] Knuth, D. E. (1975). Estimating the efficiency of backtrack programs. *Mathematics of Computation*, *29*(129), 121-136.

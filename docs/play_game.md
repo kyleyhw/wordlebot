@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-The `play_game.py` module provides a Command Line Interface (CLI) for playing the Wordle game interactively. It allows users to guess words, receive feedback, and experience the game directly from their terminal. This module serves as a user-friendly interface for human players and also as a testing ground for the core game logic defined in `rules.py`.
+The `play_game.py` module provides a Command Line Interface (CLI) for playing the Wordle game [[1]](#ref-wardle-2022) interactively. It allows users to guess words, receive feedback, and experience the game directly from their terminal. This module serves as a user-friendly interface for human players and also as a testing ground for the core game logic defined in `rules.py`.
 
 ## 2. Features
 
@@ -63,3 +63,8 @@ The game will then prompt you to enter your 5-letter guesses. Follow the on-scre
 *   `rules.py`: Provides the core `game` class and its `enter` method for processing guesses and generating feedback.
 *   `wordle_allowed_guesses.txt`: A text file containing a list of all valid 5-letter words that can be entered as guesses.
 *   `wordle_answers.txt`: A text file containing a list of all possible 5-letter words that can be chosen as the secret solution.
+
+## References
+
+<a id="ref-wardle-2022"></a>
+[1] Wardle, J. (2022). *Wordle*. Retrieved from https://www.nytimes.com/games/wordle/index.html
