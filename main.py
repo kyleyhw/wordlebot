@@ -148,17 +148,16 @@ if __name__ == "__main__":
 
     # If subset mode is enabled and no random seed is provided, generate one.
     if args.subset and args.random_seed is None:
-        args.random_seed = random.randint(0, sys.maxsize) # Generate a large random integer
+        args.random_seed = random.randint(1, 1000) # Generate a random integer between 1 and 1000
         print(f"Generated random seed for subset: {args.random_seed}")
 
     word_lists.set_subset_params(args.subset, SUBSET_SIZE, args.random_seed)
 
     # Generate a unique directory name for this test run
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
     test_run_name = f"d1_mmin_avg_remaining"
     if args.subset:
         test_run_name += f"_subset_s{args.random_seed}"
-    test_run_dir = os.path.join("test_reports", f"{test_run_name}_{timestamp}")
+    test_run_dir = os.path.join("test_reports", f"{test_run_name}")
     os.makedirs(test_run_dir, exist_ok=True)
 
     report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=args.random_seed)
