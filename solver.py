@@ -8,7 +8,7 @@ import pickle
 from tqdm import tqdm
 
 from funcs import split
-import word_lists
+from word_lists import word_list_manager
 
 # --- Helper function to get feedback (copied and adapted from rules.py) ---
 def get_feedback(guess, solution):
@@ -35,8 +35,8 @@ def get_feedback(guess, solution):
 # --- Solver Class ---
 class solver:
     def __init__(self, search_depth=1, optimization_metric='min_avg_remaining'):
-        self.allowed_guesses = word_lists.get_allowed_guesses()
-        self.possible_solutions = word_lists.get_possible_solutions()
+        self.allowed_guesses = word_list_manager.get_allowed_guesses()
+        self.possible_solutions = word_list_manager.get_possible_solutions()
         self.search_depth = search_depth
         self.optimization_metric = optimization_metric
         self.feedback_map = {}
@@ -198,7 +198,7 @@ class solver:
         if len(current_possible_solutions) == 1:
             return [(current_possible_solutions[0], 0.0)] # Return as a list of (guess, score)
         if not current_possible_solutions:
-            return [(random.choice(self.allowed_guesses), float('inf'))] # Fallback, return with high score
+            return [(random.choice(word_list_manager.get_allowed_guesses()), float('inf'))] # Fallback, return with high score
 
         all_candidate_scores = []
 
@@ -260,7 +260,7 @@ class solver:
         # If no solutions left (shouldn't happen with correct logic), return a default or raise error
         if not current_possible_solutions_list:
             print("Warning: No possible solutions left. This indicates an error in logic or word lists.")
-            return [(random.choice(self.allowed_guesses), float('inf'))] # Fallback
+            return [(random.choice(word_list_manager.get_allowed_guesses()), float('inf'))] # Fallback
 
         # For subsequent guesses, use the multi-layer search with the configured depth and metric
         return self._find_best_guess_multi_layer(current_possible_solutions_frozenset, self.search_depth, self.optimization_metric, num_recommendations, show_progress=True)
