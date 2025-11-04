@@ -131,6 +131,12 @@ Total solutions simulated: {total_games}
     report_content += f"\nRuntime: {runtime:.2f} seconds\n"
     print(report_content)
 
+    # Save the report content to a markdown file
+    report_filepath = os.path.join(report_dir, f"report_{test_run_name}.md")
+    with open(report_filepath, 'w') as f:
+        f.write(report_content)
+    print(f"Report saved to {report_filepath}")
+
     # --- Visualization ---
     plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
     if subset_info["subset_mode"]:
