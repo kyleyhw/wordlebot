@@ -53,20 +53,12 @@ class solver:
                 self.feedback_map = pickle.load(f)
             print("Solver: Feedback map loaded from cache.")
         else:
-            print("Solver: Pre-calculating feedback map...")
-            # Pre-calculate feedback for all guess-solution pairs
-            for guess in tqdm(self.allowed_guesses, desc="Pre-calculating feedback map"):
-                for solution in self.possible_solutions:
-                    self.feedback_map[(guess, solution)] = get_feedback(guess, solution)
-            print("Solver: Feedback map pre-calculation complete.")
-            print("Solver: Saving feedback map to cache...")
-            with open(feedback_map_cache_file, 'wb') as f:
-                pickle.dump(self.feedback_map, f)
-            print("Solver: Feedback map saved to cache.")
+            raise FileNotFoundError(f"Feedback map not found at {feedback_map_cache_file}. Please run generate_feedback_map.py first.")
 
         print(f"Solver: Calculating best initial guess for depth {self.search_depth} and metric {self.optimization_metric}...")
+        # Store the list of (guess, score) tuples
         self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)] = \
-            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, show_progress=True)
+            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, num_recommendations=1, show_progress=True)
         print(f"Solver: Best initial guess found: {self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)]}")
 
     def _calculate_entropy(self, guess, current_possible_solutions):
@@ -227,7 +219,9 @@ class solver:
             if config_key in self.best_initial_guesses_by_config:
                 # If num_recommendations is 1, we can use the cached single best guess
                 if num_recommendations == 1:
-                    return [(self.best_initial_guesses_by_config[config_key], 0.0)] # Assuming 0.0 for initial guess score
+                    # self.best_initial_guesses_by_config[config_key] already stores a list of (guess, score) tuples
+                    # We just need the first one if num_recommendations is 1
+                    return [self.best_initial_guesses_by_config[config_key][0]]
                 else:
                     # If we need more than 1 recommendation, we need to re-calculate
                     # This will overwrite the single best guess in cache if it was stored as such
@@ -246,12 +240,12 @@ class solver:
         # Filter possible solutions based on guess history
         current_possible_solutions_list = list(self.possible_solutions)
         for prev_guess, prev_feedback in guess_history:
-            current_possible_solutions_list = [ 
-                solution for solution in current_possible_solutions_list 
-                if (self.feedback_map[(prev_guess, solution)] == prev_feedback).all()
-            ]
-        
-        current_possible_solutions_frozenset = frozenset(current_possible_solutions_list)
+            filtered_solutions = []
+            for solution in current_possible_solutions_list:
+                if self.feedback_map[(prev_guess, solution)] == prev_feedback:
+                    filtered_solutions.append(solution)
+            current_possible_solutions_list = filtered_solutions
+            current_possible_solutions_frozenset = frozenset(current_possible_solutions_list)
 
         # If only one solution left, return it
         if len(current_possible_solutions_list) == 1:

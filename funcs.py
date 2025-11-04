@@ -8,7 +8,7 @@ def merge(test):
     return str(word)
 
 def split(string):
-    return np.array([char for char in string], dtype=str)
+    return [char for char in string]
 
 def count_occurrences(letter, list):
     return collections.Counter(list)[letter]

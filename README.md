@@ -10,6 +10,7 @@ This project is a Wordle bot that can play Wordle and solve it.
 ├───environment.yml
 ├───feedback_map.json
 ├───funcs.py
+├───generate_feedback_map.py
 ├───gui_game.py
 ├───gui_helper.py
 ├───main.py
@@ -33,6 +34,7 @@ This project is a Wordle bot that can play Wordle and solve it.
 │   ├───wordle_allowed_guesses_unsorted.txt
 │   └───wordle_answers.txt
 ├───docs/
+│   ├───generate_feedback_map.md
 │   ├───gui_game.md
 │   ├───gui_helper.md
 │   ├───main.md
@@ -46,6 +48,7 @@ This project is a Wordle bot that can play Wordle and solve it.
 
 ## Documentation
 
+- [`generate_feedback_map.md`](./docs/generate_feedback_map.md)
 - [`gui_game.md`](./docs/gui_game.md)
 - [`gui_helper.md`](./docs/gui_helper.md)
 - [`main.md`](./docs/main.md)
@@ -105,6 +108,12 @@ To use the GUI Wordle helper, run:
 
 ```
 python gui_helper.py
+```
+
+To generate the feedback map cache (e.g., for the full word list), run:
+
+```
+python generate_feedback_map.py --full_list
 ```
 
 ## References

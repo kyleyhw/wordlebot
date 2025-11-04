@@ -32,4 +32,4 @@ class game:
                     solution_copy[solution_copy.index(letter)] = None  # Mark as used
                 else:
                     colors[i] = 'b'
-        return colors
+        return "".join(colors)
