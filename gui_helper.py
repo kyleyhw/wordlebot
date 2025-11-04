@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
 import collections
+import argparse
 
 from solver import solver
-from word_lists import word_list_manager
+from word_lists import WordListManager
 
 NUM_RECOMMENDATIONS = 5 # Number of top recommendations to display
 
@@ -12,7 +13,8 @@ class WordleGUIHelper:
         self.master = master
         master.title("Wordle Helper")
 
-        self.solver = solver(search_depth=search_depth, optimization_metric=optimization_metric)
+        self.word_list_manager = WordListManager()
+        self.solver = solver(self.word_list_manager, search_depth=search_depth, optimization_metric=optimization_metric)
         self.guess_history = [] # List of (guess_word, feedback_str) tuples
 
         # --- GUI Elements ---

@@ -1,5 +1,4 @@
 .idea/
 __pycache__/
-feedback_map.json
 checkpoints/
 feedback_map.pkl

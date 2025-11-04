@@ -11,6 +11,7 @@ from rules import game
 from solver import solver, get_feedback
 from word_lists import WordListManager
 from visualizations import plot_guess_distribution
+from generate_report import generate_test_report
 
 MAX_TRIES = 6
 
@@ -115,81 +116,12 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
 
     print("\nSimulations complete!")
     
-    # --- Analysis and Reporting ---
+    # Calculate summary statistics for reporting
     total_games = len(results)
-    # Extract tries from the new results structure
     all_tries = [game_result['tries'] for game_result in results]
     average_tries = sum(all_tries) / total_games
-    
-    tries_distribution = collections.defaultdict(int)
-    for t in all_tries:
-        tries_distribution[t] += 1
 
-    # --- Visualization ---
-    plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
-    if subset_info["subset_mode"]:
-        plot_filename_base += f"_subset_s{subset_info['random_seed']}"
-    plot_filename = f"{plot_filename_base}.png"
-
-    report_content = f"""
---- Solver Performance Report ---
-Total solutions simulated: {total_games}
-"""
-    subset_info = word_list_manager_instance.get_subset_info()
-    if subset_info["subset_mode"]:
-        report_content += f"Used a subset of {subset_info['subset_size']} words for both solutions and guesses (Random Seed: {subset_info['random_seed']}).\n"
-    report_content += f"Average guesses per game: {average_tries:.2f}\n\n"
-
-    # Add best initial guess and its score
-    best_initial_guess_data = wordle_solver.best_initial_guesses_by_config[(search_depth, optimization_metric)][0]
-    report_content += f"Overall Best Initial Guess: {best_initial_guess_data[0].upper()} (Score: {best_initial_guess_data[1]:.2f})\n\n"
-
-    # Add list of possible solutions
-    report_content += "### Possible Solutions Used (Subset):\n"
-    report_content += ", ".join([s.upper() for s in possible_solutions_subset]) + "\n\n"
-
-    # Add list of allowed guesses
-    report_content += "### Allowed Guesses Used (Subset):\n"
-    report_content += ", ".join([g.upper() for g in allowed_guesses_subset]) + "\n\n"
-
-    report_content += "Guess Distribution:\n"""
-    for t in sorted(tries_distribution.keys()):
-        if t <= MAX_TRIES:
-            report_content += f"  {t} tries: {tries_distribution[t]} solutions\n"
-        else:
-            report_content += f"  Failed (>{MAX_TRIES} tries): {tries_distribution[t]} solutions\n"
-
-    report_content += "\n--- Game Details ---\n"
-    for game_result in results:
-        solution = game_result['solution']
-        tries = game_result['tries']
-        won = game_result['won']
-        guess_history = game_result['guess_history']
-
-        status = "Won" if won else "Failed"
-        report_content += f"\nSolution: {solution.upper()} ({status} in {tries} tries)\n"
-        for i, (guess, feedback) in enumerate(guess_history):
-            report_content += f"  {i+1}. {guess.upper()} -> {feedback}\n"
-
-    if failed_solutions:
-        report_content += "\nSolutions that failed to be solved within 6 tries:\n"
-        for sol in failed_solutions:
-            report_content += f"- {sol}\n"
-    else:
-        report_content += "\nAll solutions were solved within 6 tries!\n"
-    
-    report_content += f"\nRuntime: {runtime:.2f} seconds\n"
-    report_content += f"\n![Guess Distribution Plot]({plot_filename})\n"
-    print(report_content)
-
-    # Save the report content to a markdown file
-    report_filepath = os.path.join(report_dir, f"report_{test_run_name}.md")
-    with open(report_filepath, 'w') as f:
-        f.write(report_content)
-
-    plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, subset_info["subset_mode"], average_tries, os.path.join(report_dir, plot_filename), random_seed=subset_info["random_seed"])
-
-    return report_content, runtime, plot_filename, checkpoint_filename
+    return results, average_tries, possible_solutions_subset, allowed_guesses_subset, wordle_solver, runtime, checkpoint_filename
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a Wordle solver simulation.")
@@ -217,7 +149,13 @@ if __name__ == "__main__":
     test_run_dir = os.path.join("test_reports", f"{test_run_name}")
     os.makedirs(test_run_dir, exist_ok=True)
 
-    report_content, runtime, plot_filename, checkpoint_filename = run_simulation(word_list_manager, test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])
+    results, average_tries, possible_solutions_subset, allowed_guesses_subset, wordle_solver, runtime, checkpoint_filename = run_simulation(word_list_manager, test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])
+
+    # Generate the test report
+    generate_test_report(results, MAX_TRIES, args.search_depth, args.optimization_metric, subset_info, average_tries, test_run_dir, runtime, possible_solutions_subset, allowed_guesses_subset, wordle_solver)
+
+    # Generate the test report
+    generate_test_report(results, MAX_TRIES, args.search_depth, args.optimization_metric, subset_info, average_tries, test_run_dir, runtime, possible_solutions_subset, allowed_guesses_subset, wordle_solver)
 
     # Delete the checkpoint file after the simulation is complete and reports are saved
     checkpoint_filepath = os.path.join(CHECKPOINTS_DIR, checkpoint_filename)
