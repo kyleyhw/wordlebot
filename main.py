@@ -78,12 +78,24 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
 
             if feedback == "ggggg":
                 won = True
-                results.append(tries)
+                game_result = {
+                    'solution': solution,
+                    'tries': tries,
+                    'won': won,
+                    'guess_history': guess_history
+                }
+                results.append(game_result)
                 break
         
         if not won:
             failed_solutions.append(solution)
-            results.append(MAX_TRIES + 1) # Mark as failed
+            game_result = {
+                'solution': solution,
+                'tries': MAX_TRIES + 1,
+                'won': won,
+                'guess_history': guess_history
+            }
+            results.append(game_result)
 
         # Save checkpoint periodically
         if (i + 1) % CHECKPOINT_INTERVAL == 0 or (i + 1) == len(possible_solutions_subset):
@@ -101,10 +113,12 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
     
     # --- Analysis and Reporting ---
     total_games = len(results)
-    average_tries = sum(results) / total_games
+    # Extract tries from the new results structure
+    all_tries = [game_result['tries'] for game_result in results]
+    average_tries = sum(all_tries) / total_games
     
     tries_distribution = collections.defaultdict(int)
-    for t in results:
+    for t in all_tries:
         tries_distribution[t] += 1
 
     report_content = f"""

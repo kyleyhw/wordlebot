@@ -36,7 +36,8 @@ def plot_feedback_distribution(canvas, guess, feedback_map, possible_solutions):
 
 def plot_guess_distribution(results, max_tries, search_depth, optimization_metric, subset_mode, average_tries, output_filename="guess_distribution.png", random_seed=None):
     distribution = collections.defaultdict(int)
-    for t in results:
+    for game_result in results:
+        t = game_result['tries']
         if t <= max_tries:
             distribution[t] += 1
         else:
