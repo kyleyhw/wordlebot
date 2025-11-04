@@ -170,7 +170,7 @@ Total solutions simulated: {total_games}
     plot_filename = f"{plot_filename_base}.png"
     plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, subset_info["subset_mode"], average_tries, os.path.join(report_dir, plot_filename), random_seed=subset_info["random_seed"])
 
-    return report_content, runtime, plot_filename
+    return report_content, runtime, plot_filename, checkpoint_filename
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a Wordle solver simulation.")
@@ -198,4 +198,10 @@ if __name__ == "__main__":
     test_run_dir = os.path.join("test_reports", f"{test_run_name}")
     os.makedirs(test_run_dir, exist_ok=True)
 
-    report_content, runtime, plot_filename = run_simulation(word_list_manager, test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])
+    report_content, runtime, plot_filename, checkpoint_filename = run_simulation(word_list_manager, test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])
+
+    # Delete the checkpoint file after the simulation is complete and reports are saved
+    checkpoint_filepath = os.path.join(CHECKPOINTS_DIR, checkpoint_filename)
+    if os.path.exists(checkpoint_filepath):
+        os.remove(checkpoint_filepath)
+        print(f"Checkpoint file {checkpoint_filepath} deleted.")
