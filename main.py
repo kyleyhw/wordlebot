@@ -135,6 +135,18 @@ Total solutions simulated: {total_games}
         else:
             report_content += f"  Failed (>{MAX_TRIES} tries): {tries_distribution[t]} solutions\n"
 
+    report_content += "\n--- Game Details ---\n"
+    for game_result in results:
+        solution = game_result['solution']
+        tries = game_result['tries']
+        won = game_result['won']
+        guess_history = game_result['guess_history']
+
+        status = "Won" if won else "Failed"
+        report_content += f"\nSolution: {solution.upper()} ({status} in {tries} tries)\n"
+        for i, (guess, feedback) in enumerate(guess_history):
+            report_content += f"  {i+1}. {guess.upper()} -> {feedback}\n"
+
     if failed_solutions:
         report_content += "\nSolutions that failed to be solved within 6 tries:\n"
         for sol in failed_solutions:
