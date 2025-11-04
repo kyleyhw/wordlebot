@@ -58,21 +58,3 @@ class WordListManager:
             "subset_size": self.subset_size,
             "random_seed": self.random_seed
         }
-
-# Create a global instance of WordListManager
-# This will be imported by other modules
-# If word_lists.py is run directly, it will parse its own args
-# Otherwise, it will initialize with default subset mode
-_parser = argparse.ArgumentParser(add_help=False) # add_help=False to prevent conflicts with main parsers
-_parser.add_argument("--full_list", action="store_true", default=False,
-                    help="Use the full list of words instead of a subset.")
-_parser.add_argument("--subset_size", type=int, default=100,
-                    help="Size of the random subset to use.")
-_parser.add_argument("--random_seed", type=int, default=None,
-                    help="Random seed for subset generation. If not provided, a random seed will be generated.")
-
-# Try to parse known arguments. This allows other scripts to parse their own arguments
-# without word_lists.py complaining about unknown arguments.
-_args, _ = _parser.parse_known_args()
-
-word_list_manager = WordListManager(_args)

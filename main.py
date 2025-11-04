@@ -9,7 +9,7 @@ import sys # Import sys for maxsize
 
 from rules import game
 from solver import solver, get_feedback
-from word_lists import word_list_manager
+from word_lists import WordListManager
 from visualizations import plot_guess_distribution
 
 MAX_TRIES = 6
@@ -32,11 +32,11 @@ def load_checkpoint(filename):
         return checkpoint_data
     return None
 
-def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=None):
+def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optimization_metric='min_avg_remaining', random_seed=None):
     start_time = time.time() # Start timer
 
-    possible_solutions_subset = word_list_manager.get_possible_solutions()
-    allowed_guesses_subset = word_list_manager.get_allowed_guesses()
+    possible_solutions_subset = word_list_manager_instance.get_possible_solutions()
+    allowed_guesses_subset = word_list_manager_instance.get_allowed_guesses()
 
     # Generate unique checkpoint filename
     checkpoint_filename = f"checkpoint_d{search_depth}_m{optimization_metric}"
@@ -57,7 +57,7 @@ def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_rema
         failed_solutions = []
         start_index = 0
 
-    wordle_solver = solver(search_depth, optimization_metric)
+    wordle_solver = solver(word_list_manager_instance, search_depth, optimization_metric)
 
     print("\nStarting simulations...")
     # Wrap the loop with tqdm for a progress bar
@@ -111,7 +111,7 @@ def run_simulation(report_dir, search_depth=1, optimization_metric='min_avg_rema
 --- Solver Performance Report ---
 Total solutions simulated: {total_games}
 """
-    subset_info = word_list_manager.get_subset_info()
+    subset_info = word_list_manager_instance.get_subset_info()
     if subset_info["subset_mode"]:
         report_content += f"Used a subset of {subset_info['subset_size']} words for both solutions and guesses (Random Seed: {subset_info['random_seed']}).\n"
     report_content += f"Average guesses per game: {average_tries:.2f}\n\nGuess Distribution:\n"""
@@ -166,4 +166,4 @@ if __name__ == "__main__":
     test_run_dir = os.path.join("test_reports", f"{test_run_name}")
     os.makedirs(test_run_dir, exist_ok=True)
 
-    report_content, runtime, plot_filename = run_simulation(test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])
+    report_content, runtime, plot_filename = run_simulation(word_list_manager, test_run_dir, search_depth=args.search_depth, optimization_metric=args.optimization_metric, random_seed=subset_info['random_seed'])

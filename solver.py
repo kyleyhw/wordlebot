@@ -8,7 +8,7 @@ import pickle
 from tqdm import tqdm
 
 from funcs import split
-from word_lists import word_list_manager
+
 
 # --- Helper function to get feedback (copied and adapted from rules.py) ---
 def get_feedback(guess, solution):
@@ -34,9 +34,10 @@ def get_feedback(guess, solution):
 
 # --- Solver Class ---
 class solver:
-    def __init__(self, search_depth=1, optimization_metric='min_avg_remaining'):
-        self.allowed_guesses = word_list_manager.get_allowed_guesses()
-        self.possible_solutions = word_list_manager.get_possible_solutions()
+    def __init__(self, word_list_manager_instance, search_depth=1, optimization_metric='min_avg_remaining'):
+        self.word_list_manager = word_list_manager_instance
+        self.allowed_guesses = self.word_list_manager.get_allowed_guesses()
+        self.possible_solutions = self.word_list_manager.get_possible_solutions()
         self.search_depth = search_depth
         self.optimization_metric = optimization_metric
         self.feedback_map = {}
