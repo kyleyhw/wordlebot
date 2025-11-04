@@ -59,7 +59,7 @@ class solver:
         print(f"Solver: Calculating best initial guess for depth {self.search_depth} and metric {self.optimization_metric}...")
         # Store the list of (guess, score) tuples
         self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)] = \
-            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, num_recommendations=1, show_progress=True)
+            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, num_recommendations=1, show_progress=False)
         print(f"Solver: Best initial guess found: {self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)]}")
 
     def _calculate_entropy(self, guess, current_possible_solutions):

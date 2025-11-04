@@ -13,7 +13,7 @@ from word_lists import WordListManager
 from visualizations import plot_guess_distribution
 
 MAX_TRIES = 6
-CHECKPOINT_INTERVAL = 10 # Save checkpoint every N solutions
+
 CHECKPOINTS_DIR = "checkpoints"
 
 def save_checkpoint(checkpoint_data, filename):
@@ -37,6 +37,10 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
 
     possible_solutions_subset = word_list_manager_instance.get_possible_solutions()
     allowed_guesses_subset = word_list_manager_instance.get_allowed_guesses()
+    subset_info = word_list_manager_instance.get_subset_info()
+
+    total_solutions_count = len(possible_solutions_subset)
+    dynamic_checkpoint_interval = max(1, int(total_solutions_count * 0.10))
 
     # Generate unique checkpoint filename
     checkpoint_filename = f"checkpoint_d{search_depth}_m{optimization_metric}"
@@ -98,7 +102,7 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
             results.append(game_result)
 
         # Save checkpoint periodically
-        if (i + 1) % CHECKPOINT_INTERVAL == 0 or (i + 1) == len(possible_solutions_subset):
+        if (i + 1) % dynamic_checkpoint_interval == 0 or (i + 1) == len(possible_solutions_subset):
             checkpoint_data = {
                 'results': results,
                 'failed_solutions': failed_solutions,
@@ -121,6 +125,12 @@ def run_simulation(word_list_manager_instance, report_dir, search_depth=1, optim
     for t in all_tries:
         tries_distribution[t] += 1
 
+    # --- Visualization ---
+    plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
+    if subset_info["subset_mode"]:
+        plot_filename_base += f"_subset_s{subset_info['random_seed']}"
+    plot_filename = f"{plot_filename_base}.png"
+
     report_content = f"""
 --- Solver Performance Report ---
 Total solutions simulated: {total_games}
@@ -128,7 +138,21 @@ Total solutions simulated: {total_games}
     subset_info = word_list_manager_instance.get_subset_info()
     if subset_info["subset_mode"]:
         report_content += f"Used a subset of {subset_info['subset_size']} words for both solutions and guesses (Random Seed: {subset_info['random_seed']}).\n"
-    report_content += f"Average guesses per game: {average_tries:.2f}\n\nGuess Distribution:\n"""
+    report_content += f"Average guesses per game: {average_tries:.2f}\n\n"
+
+    # Add best initial guess and its score
+    best_initial_guess_data = wordle_solver.best_initial_guesses_by_config[(search_depth, optimization_metric)][0]
+    report_content += f"Overall Best Initial Guess: {best_initial_guess_data[0].upper()} (Score: {best_initial_guess_data[1]:.2f})\n\n"
+
+    # Add list of possible solutions
+    report_content += "### Possible Solutions Used (Subset):\n"
+    report_content += ", ".join([s.upper() for s in possible_solutions_subset]) + "\n\n"
+
+    # Add list of allowed guesses
+    report_content += "### Allowed Guesses Used (Subset):\n"
+    report_content += ", ".join([g.upper() for g in allowed_guesses_subset]) + "\n\n"
+
+    report_content += "Guess Distribution:\n"""
     for t in sorted(tries_distribution.keys()):
         if t <= MAX_TRIES:
             report_content += f"  {t} tries: {tries_distribution[t]} solutions\n"
@@ -155,19 +179,14 @@ Total solutions simulated: {total_games}
         report_content += "\nAll solutions were solved within 6 tries!\n"
     
     report_content += f"\nRuntime: {runtime:.2f} seconds\n"
+    report_content += f"\n![Guess Distribution Plot]({plot_filename})\n"
     print(report_content)
 
     # Save the report content to a markdown file
     report_filepath = os.path.join(report_dir, f"report_{test_run_name}.md")
     with open(report_filepath, 'w') as f:
         f.write(report_content)
-    print(f"Report saved to {report_filepath}")
 
-    # --- Visualization ---
-    plot_filename_base = f"guess_distribution_d{search_depth}_m{optimization_metric}"
-    if subset_info["subset_mode"]:
-        plot_filename_base += f"_subset_s{subset_info['random_seed']}"
-    plot_filename = f"{plot_filename_base}.png"
     plot_guess_distribution(results, MAX_TRIES, search_depth, optimization_metric, subset_info["subset_mode"], average_tries, os.path.join(report_dir, plot_filename), random_seed=subset_info["random_seed"])
 
     return report_content, runtime, plot_filename, checkpoint_filename
