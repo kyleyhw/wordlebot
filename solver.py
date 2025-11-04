@@ -4,6 +4,7 @@ import random
 import sys
 import json
 import os
+import pickle
 from tqdm import tqdm
 
 from funcs import split
@@ -45,12 +46,11 @@ class solver:
         if self.optimization_metric not in ['min_max_remaining', 'min_avg_remaining', 'min_avg_guesses']:
             raise ValueError("optimization_metric must be 'min_max_remaining', 'min_avg_remaining', or 'min_avg_guesses'")
 
-        feedback_map_cache_file = "feedback_map.json"
+        feedback_map_cache_file = "feedback_map.pkl"
         if os.path.exists(feedback_map_cache_file):
             print("Solver: Loading feedback map from cache...")
-            with open(feedback_map_cache_file, 'r') as f:
-                feedback_map_str_keys = json.load(f)
-            self.feedback_map = {tuple(eval(k)): v for k, v in feedback_map_str_keys.items()}
+            with open(feedback_map_cache_file, 'rb') as f:
+                self.feedback_map = pickle.load(f)
             print("Solver: Feedback map loaded from cache.")
         else:
             print("Solver: Pre-calculating feedback map...")
@@ -60,14 +60,13 @@ class solver:
                     self.feedback_map[(guess, solution)] = get_feedback(guess, solution)
             print("Solver: Feedback map pre-calculation complete.")
             print("Solver: Saving feedback map to cache...")
-            feedback_map_str_keys = {str(k): v for k, v in self.feedback_map.items()}
-            with open(feedback_map_cache_file, 'w') as f:
-                json.dump(feedback_map_str_keys, f)
+            with open(feedback_map_cache_file, 'wb') as f:
+                pickle.dump(self.feedback_map, f)
             print("Solver: Feedback map saved to cache.")
 
         print(f"Solver: Calculating best initial guess for depth {self.search_depth} and metric {self.optimization_metric}...")
         self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)] = \
-            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric)
+            self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, show_progress=True)
         print(f"Solver: Best initial guess found: {self.best_initial_guesses_by_config[(self.search_depth, self.optimization_metric)]}")
 
     def _calculate_entropy(self, guess, current_possible_solutions):
@@ -165,7 +164,7 @@ class solver:
 
         if optimization_metric == 'min_max_remaining':
             max_remaining = 0
-            for pattern, group in tqdm(pattern_groups.items(), desc="Evaluating guess"):
+            for pattern, group in pattern_groups.items():
                 group_frozenset = frozenset(group)
                 # Recursively evaluate the best next guess for this group
                 next_best_guess = self._find_best_guess_multi_layer(group_frozenset, depth - 1, optimization_metric)
@@ -176,7 +175,7 @@ class solver:
 
         elif optimization_metric == 'min_avg_remaining':
             total_remaining = 0
-            for pattern, group in tqdm(pattern_groups.items(), desc="Evaluating guess"):
+            for pattern, group in pattern_groups.items():
                 group_frozenset = frozenset(group)
                 # Recursively evaluate the best next guess for this group
                 next_best_guess = self._find_best_guess_multi_layer(group_frozenset, depth - 1, optimization_metric)
@@ -193,49 +192,56 @@ class solver:
         # Fallback for unexpected metric
         return len(current_possible_solutions)
 
-    def _find_best_guess_multi_layer(self, current_possible_solutions_frozenset, search_depth, optimization_metric):
+    def _find_best_guess_multi_layer(self, current_possible_solutions_frozenset, search_depth, optimization_metric, num_recommendations=1, show_progress=False):
         current_possible_solutions = list(current_possible_solutions_frozenset)
 
         if len(current_possible_solutions) == 1:
-            return current_possible_solutions[0]
+            return [(current_possible_solutions[0], 0.0)] # Return as a list of (guess, score)
         if not current_possible_solutions:
-            return random.choice(self.allowed_guesses) # Fallback
+            return [(random.choice(self.allowed_guesses), float('inf'))] # Fallback, return with high score
 
-        best_score = float('inf') # We want to minimize remaining solutions/guesses
-        best_guess = None
+        all_candidate_scores = []
 
-        # For multi-layer search, we consider all allowed guesses as candidates
-        # This is the most computationally intensive part
-        candidate_guesses = self.allowed_guesses # Or a subset for optimization
+        candidate_guesses = self.allowed_guesses
 
-        for guess in candidate_guesses:
+        # Apply tqdm only if show_progress is True
+        if show_progress:
+            iterable_guesses = tqdm(candidate_guesses, desc="Calculating best initial guess")
+        else:
+            iterable_guesses = candidate_guesses
+
+        for guess in iterable_guesses:
             score = self._evaluate_guess(guess, current_possible_solutions_frozenset, search_depth, optimization_metric)
-            if score < best_score:
-                best_score = score
-                best_guess = guess
+            all_candidate_scores.append((score, guess))
         
-        # Fallback if no best guess found (e.g., all scores are inf or 0)
-        if best_guess is None:
-            # If current_possible_solutions is not empty, pick one of them
-            if current_possible_solutions:
-                return current_possible_solutions[0]
-            else:
-                return random.choice(self.allowed_guesses) # Final fallback
+        # Sort by score (ascending) and take the top num_recommendations
+        all_candidate_scores.sort(key=lambda x: x[0])
+        
+        # Return a list of (guess, score) tuples
+        return [(guess, score) for score, guess in all_candidate_scores[:num_recommendations]]
 
-        return best_guess
-
-    def get_next_guess(self, guess_history):
+    def get_next_guess(self, guess_history, num_recommendations=1):
         # Use pre-calculated initial guess if available and it's the first turn
         if not guess_history:
             config_key = (self.search_depth, self.optimization_metric)
             if config_key in self.best_initial_guesses_by_config:
-                return self.best_initial_guesses_by_config[config_key]
+                # If num_recommendations is 1, we can use the cached single best guess
+                if num_recommendations == 1:
+                    return [(self.best_initial_guesses_by_config[config_key], 0.0)] # Assuming 0.0 for initial guess score
+                else:
+                    # If we need more than 1 recommendation, we need to re-calculate
+                    # This will overwrite the single best guess in cache if it was stored as such
+                    print(f"Warning: Initial guess for depth {self.search_depth} and metric {self.optimization_metric} needs re-calculation for multiple recommendations.")
+                    recommendations = self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, num_recommendations, show_progress=True)
+                    self.best_initial_guesses_by_config[config_key] = recommendations # Cache the list of recommendations
+                    return recommendations
             else:
                 # If not pre-calculated, calculate it now (should ideally be pre-calculated)
                 print(f"Warning: Initial guess for depth {self.search_depth} and metric {self.optimization_metric} not pre-calculated. Calculating now...")
-                self.best_initial_guesses_by_config[config_key] = \
-                    self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric)
-                return self.best_initial_guesses_by_config[config_key]
+                recommendations = self._find_best_guess_multi_layer(frozenset(self.possible_solutions), self.search_depth, self.optimization_metric, num_recommendations, show_progress=True)
+                # Cache the list of recommendations
+                self.best_initial_guesses_by_config[config_key] = recommendations
+                return recommendations
 
         # Filter possible solutions based on guess history
         current_possible_solutions_list = list(self.possible_solutions)
@@ -249,13 +255,12 @@ class solver:
 
         # If only one solution left, return it
         if len(current_possible_solutions_list) == 1:
-            return current_possible_solutions_list[0]
+            return [(current_possible_solutions_list[0], 0.0)] # Return as a list of (guess, score)
         
         # If no solutions left (shouldn't happen with correct logic), return a default or raise error
         if not current_possible_solutions_list:
             print("Warning: No possible solutions left. This indicates an error in logic or word lists.")
-            return random.choice(self.allowed_guesses) # Fallback
+            return [(random.choice(self.allowed_guesses), float('inf'))] # Fallback
 
         # For subsequent guesses, use the multi-layer search with the configured depth and metric
-        # This will be computationally expensive for depth > 1
-        return self._find_best_guess_multi_layer(current_possible_solutions_frozenset, self.search_depth, self.optimization_metric)
+        return self._find_best_guess_multi_layer(current_possible_solutions_frozenset, self.search_depth, self.optimization_metric, num_recommendations, show_progress=True)

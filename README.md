@@ -11,11 +11,14 @@ This project is a Wordle bot that can play Wordle and solve it.
 ├───feedback_map.json
 ├───funcs.py
 ├───gui_game.py
+├───gui_helper.py
 ├───main.py
 ├───play_game.py
 ├───rules.py
 ├───solver.py
 ├───visualizations.py
+├───wordle_helper.py
+├───word_lists.py
 ├───__pycache__/
 │   ├───funcs.cpython-310.pyc
 │   ├───funcs.cpython-39.pyc
@@ -31,21 +34,26 @@ This project is a Wordle bot that can play Wordle and solve it.
 │   └───wordle_answers.txt
 ├───docs/
 │   ├───gui_game.md
+│   ├───gui_helper.md
 │   ├───main.md
 │   ├───play_game.md
 │   ├───rules.md
-│   └───solver.md
+│   ├───solver.md
+│   ├───word_lists.md
+│   └───wordle_helper.md
 └───test_reports/
 ```
 
 ## Documentation
 
 - [`gui_game.md`](./docs/gui_game.md)
+- [`gui_helper.md`](./docs/gui_helper.md)
 - [`main.md`](./docs/main.md)
 - [`play_game.md`](./docs/play_game.md)
 - [`rules.md`](./docs/rules.md)
 - [`solver.md`](./docs/solver.md)
 - [`word_lists.md`](./docs/word_lists.md)
+- [`wordle_helper.md`](./docs/wordle_helper.md)
 
 ## Overview
 
@@ -85,6 +93,18 @@ To play the game with a GUI, run:
 
 ```
 python gui_game.py
+```
+
+To use the interactive Wordle helper, run:
+
+```
+python wordle_helper.py
+```
+
+To use the GUI Wordle helper, run:
+
+```
+python gui_helper.py
 ```
 
 ## References
